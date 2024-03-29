@@ -3,6 +3,8 @@ classdef SAC < handle
         altitude(1,1) double;
         k(1,2) double;
         u0(1,1) double;
+        A(12,12) double;
+        B(12,4) double;
     end
 
 
@@ -10,6 +12,7 @@ classdef SAC < handle
         function obj = SAC(gains, quadrotor)
             obj.u0 = quadrotor.m*quadrotor.g/4;
             obj.k = gains;
+            [obj.A, obj.B] = linearize([1,0,0]);
         end
 
         function u = output(self, ~, z, y)
