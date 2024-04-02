@@ -8,7 +8,7 @@ clc;
 position = [0,0,1];
 [A, B] = linearize(position)
 
-function [A, B] = linearize(position)
+function [A, B] = linearize_quad(position)
     syms x y z xdot ydot zdot phi theta psiVar omega1 omega2 omega3 u1 u2 u3 u4 ...
         n1 n2 n3 r1 r2 r3
     l = 0.2; m = 0.5; I1 = 1.24; I2 = 1.24; I3 = 2.48; g = 9.8; sigma = 0.01; % all in quad object
