@@ -7,6 +7,7 @@ classdef SAC < handle
         B(12,4) double;
         prev_y(3,2) double;
         timeStep(1,1) double;
+        maxVels(3,1) double;
     end
 
     methods(Access = public)
@@ -15,17 +16,24 @@ classdef SAC < handle
             obj.k = gains;
             obj.prev_y = zeros(3,2);
             obj.timeStep = 0.01;
+            obj.maxVels = [1; 1; 2.25];
             position = [1,0,0];
             [obj.A, obj.B] = linearize_quad(position);
         end
 
-        function [u, target] = output(self, isCaptured, z, y)
+        function [u, r] = output(self, isCaptured, z, y)
             if isCaptured == false
                 %predict intruder traj
                 coeffs = self.solveCoeffs(y);
-                %find desired point
                 target = self.solvePredict(coeffs, 0.01);
-                disp([target, y])
+                % disp([target, y])
+                %find desired point
+                if ~(all(self.prev_y == 0))
+                    r = self.findIntersectionPoint(coeffs, z);
+                    disp([r, y])
+                else
+                    r = z(1:3);
+                end
                 
                 %solve for u
                 %return u
@@ -46,6 +54,19 @@ classdef SAC < handle
 
         function futurePose = solvePredict(self, coeffs, t)
             futurePose = coeffs*[t^2; t; 1];
+        end
+
+        function desired = findIntersectionPoint(self, coeffs, z)
+            for t = 0:0.1:2
+                uavPose = self.solvePredict(coeffs, t);
+                min = z(1:3) - self.maxVels*t;
+                max = z(1:3) + self.maxVels*t;
+                if all((uavPose < max) & (uavPose > min))
+                    desired = uavPose;
+                    return
+                end
+                desired = z(1:3);
+            end
         end
     end
 end
