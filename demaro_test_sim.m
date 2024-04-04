@@ -77,7 +77,7 @@ R = eye(4);
 
 [K,S,CLP] = lqr(A,B,Q,R);
 
-ctrl = lineartrial2(K, quad);
+ctrl = SAC(K, quad);
 
 % SIMULATION
 

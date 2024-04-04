@@ -15,7 +15,7 @@ classdef lineartrial2 < handle
 
         function u = output(obj, ~, z, y)
             obj.zdes(1:3) = y(1:3);
-            u = obj.u0 + obj.k*(obj.zdes - z);
+            u = repmat(obj.u0, [4,1]) + obj.k*(obj.zdes - z);
         end
     end
 

@@ -1,7 +1,7 @@
 classdef SAC < handle
     properties(Access = public)
         altitude(1,1) double;
-        k(1,2) double;
+        k(4, 12) double;
         u0(1,1) double;
         A(12,12) double;
         B(12,4) double;
@@ -16,7 +16,7 @@ classdef SAC < handle
             obj.k = gains;
             obj.prev_y = zeros(3,2);
             obj.timeStep = 0.01;
-            obj.maxVels = [1; 1; 2.25];
+            obj.maxVels = [0.75; 0.75; 2.25];
             position = [1,0,0];
             [obj.A, obj.B] = linearize_quad(position);
         end
@@ -25,20 +25,18 @@ classdef SAC < handle
             if isCaptured == false
                 %predict intruder traj
                 coeffs = self.solveCoeffs(y);
-                target = self.solvePredict(coeffs, 0.01);
                 % disp([target, y])
                 %find desired point
+                r = zeros(12, 1);
                 if ~(all(self.prev_y == 0))
-                    r = self.findIntersectionPoint(coeffs, z);
-                    disp([r, y])
+                    r(1:3) = self.findIntersectionPoint(coeffs, z);
                 else
-                    r = z(1:3);
+                    r(1:3) = y(1:3);
                 end
-                
+                u = repmat(self.u0, [4,1]) + self.k*(r - z);
                 %solve for u
                 %return u
             end
-            u = self.u0 + repmat(self.k*[(y(3) - z(3)); -z(9)],[4,1]);
         end
 
         function coeffs = solveCoeffs(self, y)
@@ -57,16 +55,18 @@ classdef SAC < handle
         end
 
         function desired = findIntersectionPoint(self, coeffs, z)
-            for t = 0:0.1:2
+            for t = 0:0.2:8
                 uavPose = self.solvePredict(coeffs, t);
                 min = z(1:3) - self.maxVels*t;
                 max = z(1:3) + self.maxVels*t;
                 if all((uavPose < max) & (uavPose > min))
                     desired = uavPose;
+                    disp("found intersection")
                     return
                 end
-                desired = z(1:3);
             end
+            desired = self.solvePredict(coeffs, 0);
+            disp("did not find intersection")
         end
     end
 end
