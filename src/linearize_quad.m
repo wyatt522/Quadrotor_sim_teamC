@@ -1,17 +1,7 @@
-% Attempting to linearize parts of the system dynamics
-clear all;
-close all;
-clc;
-% syms x y z xdot ydot zdot phi theta psiVar omega1 omega2 omega3 u1 u2 u3 u4 ...
-%     n1 n2 n3 r1 r2 r3
-
-position = [0,0,1];
-[A, B] = linearize(position)
-
-function [A, B] = linearize_quad(position)
+function [A, B] = linearize_quad(quad, position)
     syms x y z xdot ydot zdot phi theta psiVar omega1 omega2 omega3 u1 u2 u3 u4 ...
         n1 n2 n3 r1 r2 r3
-    l = 0.2; m = 0.5; I1 = 1.24; I2 = 1.24; I3 = 2.48; g = 9.8; sigma = 0.01; % all in quad object
+    l = quad.l; m = quad.m; I1 = quad.I(1, 1); I2 = quad.I(2, 2); I3 = quad.I(3,3); g = quad.g; sigma = quad.sigma; % all in quad object
     
     Rz = [cos(psiVar) -sin(psiVar) 0; sin(psiVar) cos(psiVar) 0; 0 0 1]; % R3
     Ry = [cos(theta) 0 sin(theta); 0 1 0; -sin(theta) 0 cos(theta)]; %R2
