@@ -71,15 +71,17 @@ classdef quadrotor < handle
         end
 
         function [t, z] = solve(obj, tspan, z0, control, dist)
-            if nargin < 4 %does not have distance or control 
+            if nargin < 4
                 control = @(t,z) zeros(4,1);
             end
 
             if isnumeric(control)
                 control = @(t,z) control;
             end
-    
-            if nargin < 5 %does not have distance
+            
+
+
+            if nargin < 5
                 dist = struct("r", @(t,z)zeros(3,1), ...
                     "n", @(t,z)zeros(3,1));
             end

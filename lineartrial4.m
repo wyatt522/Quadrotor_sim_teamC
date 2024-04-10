@@ -1,17 +1,19 @@
-classdef lineartrial3 < handle
+classdef lineartrial4 < handle
     properties(Access = public)
         zdes(12,1) double;
-        K(4,12) double;
+        K_to_capture(4,12) double;
+        K_to_return(4,12) double;
         u0(4,1) double;
         y_prev(3,1) double;
         y_prev_init(3,1) double;
         A(12,12) double;
         B(12,4) double;
+        epsilon(1,1) double;
     end
 
 
     methods(Access = public)
-        function obj = lineartrial3(quadrotor)
+        function obj = lineartrial4(quadrotor)
 
             obj.zdes = zeros(12,1);
             obj.u0 = repmat(quadrotor.m*quadrotor.g/4, [4,1]);
@@ -19,10 +21,15 @@ classdef lineartrial3 < handle
 
             Q = diag([10 10 10 2.5 2.5 2.5 5 5 5 5 5 5]);
             R = 2.5*eye(4);
-            obj.K = lqr(obj.A,obj.B,Q,R);
+     
+            obj.K_to_capture = lqr(obj.A,obj.B,Q,R);
+            P = [-0.25 -0.25 -0.25 -0.5 -0.5 -0.5 -1 -1 -1 -2 -2 -2];
+            obj.K_to_return = place(obj.A,obj.B,P);
 
             obj.y_prev = [NaN; NaN; NaN];
             obj.y_prev_init = [NaN; NaN; NaN];
+
+            obj.epsilon = quadrotor.l/2;
         end
 
         function projected_dist = calc_ref(obj, z, y)
@@ -37,12 +44,30 @@ classdef lineartrial3 < handle
             obj.y_prev = y;
         end
 
+        function iscaptured = find_capture(obj, z, y)
+            if norm(z(1:3)-y,2) < obj.epsilon
+                iscaptured = true;
+            else
+                iscaptured = false;
+            end
+        end
+
         function u = output(obj, ~, z, y)
-            ref = obj.calc_ref(z, y);
-            obj.zdes(1:3) = ref;
-            e = obj.zdes - z;
-            v = -obj.K * e;
-            u = obj.u0 - v;
+            iscaptured = find_capture(obj, z, y);
+            if iscaptured == false
+                disp("Chasing")
+                ref = obj.calc_ref(z, y);
+                obj.zdes(1:3) = ref;
+                e = obj.zdes - z;
+                v = -obj.K_to_capture * e;
+                u = obj.u0 - v;
+            elseif iscaptured == true
+                disp("Returning")
+                obj.zdes(1:2) = zeros(2,1);
+                e = obj.zdes - z;
+                v = -obj.K_to_return * e;
+                u = obj.u0 - v;
+            end
         end
     end
 end
