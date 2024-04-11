@@ -16,10 +16,10 @@ classdef SAC < handle
             obj.u0 = quadrotor.m*quadrotor.g/4;
             obj.prev_y = zeros(3,2);
             obj.timeStep = 0.01;
-            obj.maxVels = [0.75; 0.75; 2.25];
+            obj.maxVels = [1.5; 1.5; 3];
             position = [1,0,0];
-            Q = diag([1,1,1,0.5,0.5,0.5,0,0,0,2,2,2]);
-            R = eye(4);
+            Q = diag([10,10,10,2.5,2.5,2.5,5,5,5,5,5,5]);
+            R = 0.5*eye(4);
             [A, B] = linearize_quad(quadrotor, position);
             [K,~, ~] = lqr(A,B,Q,R);
             obj.k = K;
