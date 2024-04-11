@@ -14,6 +14,7 @@ classdef sample_hover_control < handle
         end
 
         function u = output(obj, ~, z, ~)
+
             u = obj.u0 + repmat(obj.k*[(obj.altitude - z(3)); -z(9)],[4,1]);
         end
     end

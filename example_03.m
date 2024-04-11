@@ -21,7 +21,7 @@ dist = struct("r", @(t)0.1*[sin(t); sin(2*t); sin(4*t)],...
 intruder = uav(path, dist);
 
 % CONTROLLER
-ctrl = sample_hover_control(2, [3 0.2], quad);
+ctrl = controller2([-0.5 0.5 3], 0, [3 1], quad);
 
 % SIMULATION
 
@@ -33,6 +33,37 @@ z0 = zeros(12,1);
 
 [t,z,u,d,y] = sim.simulate(z0);
 
+
+%PLOT
+u1i = 1:4:length(u);
+u3i = 3:4:length(u);
+
+
+
+figure;
+
+% Plot for X Position
+subplot(2, 1, 1); 
+plot(t, z(:, 1), 'bo-', 'DisplayName', 'X Position');
+hold on;
+plot(t, z(:, 7), 'ro-', 'DisplayName', 'Velocity');
+grid on;
+xlabel('Time (s)');
+ylabel('X Position (m)');
+title('X Position over Time');
+legend('Location', 'best');
+
+% Plot for motors
+subplot(2, 1, 2); 
+grid on; % Turn on grid before plotting the lines
+xlabel('Time (s)');
+ylabel('Rotors');
+title('Rotors over Time');
+plot(t(1:500, :), ctrl.uvec(1,:), 'bo-', 'DisplayName', 'u1');
+hold on;
+plot(t(1:500, :), ctrl.uvec(3,:), 'ro-', 'DisplayName', 'u3');
+legend('Location', 'best');
 % ANIMATION
 sim.animate(t, z, y);
+
 
