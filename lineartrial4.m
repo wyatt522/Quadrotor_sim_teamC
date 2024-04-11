@@ -23,8 +23,8 @@ classdef lineartrial4 < handle
             R = 2.5*eye(4);
      
             obj.K_to_capture = lqr(obj.A,obj.B,Q,R);
-            P = [-0.25 -0.25 -0.25 -0.5 -0.5 -0.5 -1 -1 -1 -2 -2 -2];
-            obj.K_to_return = place(obj.A,obj.B,P);
+            Q = diag([5 5 5 2.5 2.5 2.5 7.5 7.5 7.5 10 10 10]);
+            obj.K_to_return = lqr(obj.A,obj.B,Q,R);
 
             obj.y_prev = [NaN; NaN; NaN];
             obj.y_prev_init = [NaN; NaN; NaN];
@@ -63,7 +63,8 @@ classdef lineartrial4 < handle
                 u = obj.u0 - v;
             elseif iscaptured == true
                 disp("Returning")
-                obj.zdes(1:2) = zeros(2,1);
+                obj.zdes = zeros(12,1);
+                obj.zdes(3) = 3;
                 e = obj.zdes - z;
                 v = -obj.K_to_return * e;
                 u = obj.u0 - v;
