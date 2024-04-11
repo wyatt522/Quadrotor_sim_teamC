@@ -1,4 +1,4 @@
-classdef lineartrial4 < handle
+classdef lineartrial5 < handle
     properties(Access = public)
         zdes(12,1) double;
         K_to_capture(4,12) double;
@@ -11,17 +11,19 @@ classdef lineartrial4 < handle
         epsilon(1,1) double;
         uvec;
         projdist;
+        prev_ref(3,1) double;
+        refvelvec;
     end
 
 
     methods(Access = public)
-        function obj = lineartrial4(quadrotor)
+        function obj = lineartrial5(quadrotor)
 
             obj.zdes = zeros(12,1);
             obj.u0 = repmat(quadrotor.m*quadrotor.g/4, [4,1]);
             [obj.A, obj.B] = linearize(zeros(12,1), obj.u0, quadrotor);
 
-            Q = diag([10 10 10 2.5 2.5 2.5 5 5 5 5 5 5]);
+            Q = diag([1 1 1 2.5 2.5 2.5 100 100 100 5 5 5]);
             R = 2.5*eye(4);
      
             obj.K_to_capture = lqr(obj.A,obj.B,Q,R);
@@ -34,19 +36,22 @@ classdef lineartrial4 < handle
             obj.epsilon = quadrotor.l/2;
 
             obj.uvec = [];
+            obj.prev_ref = 0;
         end
 
-        function projected_dist = calc_ref(obj, z, y)
+        function [ref_pos, ref_vel] = calc_ref(obj, z, y)
             if obj.y_prev ~= obj.y_prev_init
                 delta_y = y - obj.y_prev;
                 normalized_direction = normalize(delta_y);
                 dist_quad_uav = norm(z(1:3) - y(1:3));
-                projected_dist = y(1:3) + dist_quad_uav * normalized_direction;
+                ref_pos = y(1:3) + dist_quad_uav * normalized_direction;
             else
-                projected_dist = y(1:3);
+                ref_pos = y(1:3);
             end
             obj.y_prev = y;
-            obj.projdist = cat(2,obj.projdist,projected_dist);
+            % obj.projdist = cat(2,obj.projdist,ref);
+            time_step = 0.01;
+            ref_vel = (y(1:3) - z(1:3)) / time_step;
         end
 
         function iscaptured = find_capture(obj, z, y)
@@ -61,10 +66,11 @@ classdef lineartrial4 < handle
             iscaptured = find_capture(obj, z, y);
             if iscaptured == false
                 disp("Chasing")
-                ref = obj.calc_ref(z, y);
-                obj.zdes(1:3) = ref;
+                [ref_pos, ref_vel] = obj.calc_ref(z, y);
+                obj.zdes(1:3) = ref_pos; %ref(1:3);
+                obj.zdes(7:9) = ref_vel;
                 e = obj.zdes - z;
-                v = -obj.K_to_capture * e;
+                v = ref_vel -obj.K_to_capture * e;
                 u = obj.u0 - v;
             elseif iscaptured == true
                 disp("Returning")
@@ -75,6 +81,7 @@ classdef lineartrial4 < handle
                 u = obj.u0 - v;
             end
             obj.uvec = cat(2,obj.uvec,u);
+            obj.refvelvec = cat(2,obj.refvelvec,ref_vel);
         end
     end
 end

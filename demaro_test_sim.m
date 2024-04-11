@@ -14,7 +14,7 @@ sigma = 0.01;  % The proportionality constant relating thrust to torque [m]
 quad = quadrotor(g, l, m, diag(I), mu, sigma);
 
 % INTRUDER
-path = @(t) [cos(t); sin(t); 2];
+path = @(t) [2*cos(t); sin(t); 2];
 dist = struct("r", @(t,z)0.1*[sin(t); sin(2*t); sin(4*t)],...
     "n", @(t,z) 0.1*[0.1; 0.01; 0.1]);
  
@@ -23,7 +23,7 @@ intruder = uav(path, dist);
 
 % CONTROLLER
 
-ctrl = lineartrial4(quad);
+ctrl = lineartrial5(quad);
 
 % SIMULATION
 
@@ -38,7 +38,18 @@ z0 = zeros(12,1);
 
 % ANIMATION
 sim.animate(t, z, y);
-quad.plot(t,z)
+quad.plot(t,z);
+figure
+plot(ctrl.uvec(1,:)); hold on; plot(ctrl.uvec(2,:)); plot(ctrl.uvec(3,:)); plot(ctrl.uvec(4,:));
+legend('u1','u2','u3','u4');
+title('Control Input')
+xlabel('Time, t (s)')
+ylabel('Rotor Torques, T (Nm)')
+figure
+plot(ctrl.refvelvec(1,:)); hold on; plot(ctrl.refvelvec(2,:)); plot(ctrl.refvelvec(3,:));
+% figure
+% plot(ctrl.projdist(1,:)); hold on; plot(ctrl.projdist(2,:)); plot(ctrl.projdist(3,:));
+% plot(z(1,:)); plot(z(2,:)); plot(z(3,:)); legend;
 % figure
 % plot(u(1,:),t); hold on;
 % plot(u(2,:),t);
