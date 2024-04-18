@@ -19,14 +19,14 @@ dist = struct("r", @(t,z)0.1*[sin(t); sin(2*t); sin(4*t)],...
     "n", @(t,z) 0.1*[0.1; 0.01; 0.1]);
 
 intruder = uav(path, dist);
-
 % tspan = 0:5:0.1;
 % y = intruder.location(false,tspan,[]);
 % zdes = zeros(12,1); zdes(1:3) = y(1:3);
 
 % CONTROLLER
 
-ctrl = lineartrial5(quad);
+% ctrl = lineartrial5(quad);
+ctrl = SAC(quad);
 
 % SIMULATION
 

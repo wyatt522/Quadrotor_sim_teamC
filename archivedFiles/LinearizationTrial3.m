@@ -36,32 +36,45 @@ omega_dot = I\(((u(2) - u(4)) * l * [1;0;0]) + ((u(3) - u(1)) * l * [0;1;0]) + (
 
 qdot = [pos_dot; alpha_dot; vel_dot; omega_dot];
 
-z0 = [0 0 1 0 0 0 0 0 0 0 0 0]';
+q0 = [0 0 1 0 0 0 0 0 0 0 0 0]';
 u0 = m*g/4 * ones(4,1);
 Ja = jacobian(qdot, q);
-Ja_eval = subs(Ja, [q; u; r], [z0; u0; zeros(size(r))]);
+Ja_eval = subs(Ja, [q; u; r], [q0; u0; zeros(size(r))]);
 A = eval(Ja_eval)
 Jb = jacobian(qdot, u);
-Jb_eval = subs(Jb, [q; u; r], [z0; u0; zeros(size(r))]);
+Jb_eval = subs(Jb, [q; u; r], [q0; u0; zeros(size(r))]);
 B = eval(Jb_eval)
 
 rank(ctrb(A,B))
 
-function zdot = f(z,u)
-    Rz = [cos(q(6)) -sin(q(6)) 0; sin(q(6)) cos(q(6)) 0; 0 0 1]; % R3
-    Ry = [cos(q(5)) 0 sin(q(5)); 0 1 0; -sin(q(5)) 0 cos(q(5))]; %R2
-    Rx = [1 0 0; 0 cos(q(4)) -sin(q(4)); 0 sin(q(4)) cos(q(4))]; %R1
+e = q0 - q;
+v = u0 - u;
+
+edot = 0 - fxn(q0-e, u0-v);
+
+JaE = jacobian(edot, e);
+JaE_eval = subs(JaE, [e; v; r], [zeros(size(e)); zeros(size(v)); zeros(size(r))]);
+AE = eval(JaE_eval)
+JbE = jacobian(edot, v);
+JbE_eval = subs(JbE, [e; v; r], [zeros(size(e)); zeros(size(v)); zeros(size(r))]);
+BE = eval(JbE_eval)
+
+function zdot = fxn(z,u)
+    l = 0.2; m = 0.5; I1 = 1.24; I2 = 1.24; I3 = 2.48; g = 9.8; sigma = 0.01;
+    Rz = [cos(z(6)) -sin(z(6)) 0; sin(z(6)) cos(z(6)) 0; 0 0 1]; %R3
+    Ry = [cos(z(5)) 0 sin(z(5)); 0 1 0; -sin(z(5)) 0 cos(z(5))]; %R2
+    Rx = [1 0 0; 0 cos(z(4)) -sin(z(4)); 0 sin(z(4)) cos(z(4))]; %R1
     R_CE = Rz * Ry * Rx;
 
-    T = [1 0 -sin(q(5)); 0 cos(q(4)) sin(q(4))*cos(q(5)); 0 -sin(q(4)) cos(q(4))*cos(q(5))]; % omega = T * alphadot
+    T = [1 0 -sin(z(5)); 0 cos(z(4)) sin(z(4))*cos(z(5)); 0 -sin(z(4)) cos(z(4))*cos(z(5))]; % omega = T * alphadot
     I = diag([I1, I2, I3]);
-    u = [u1; u2; u3; u4];
-    n = [n1; n2; n3];
-    r = [r1; r2; r3];
-    omega = q(10:12,1);
+    omega = z(10:12);
+    r = zeros(3,1);
+    n = zeros(3,1);
 
-    pos_dot = q(7:9,1);
+    pos_dot = z(7:9);
     alpha_dot = T\omega;
     vel_dot = (-g * [0; 0; 1]) + (1/m * R_CE * (u(1) + u(2) + u(3) + u(4)) * [0; 0; 1]) + (1/m * R_CE * r);
     omega_dot = I\(((u(2) - u(4)) * l * [1;0;0]) + ((u(3) - u(1)) * l * [0;1;0]) + ((u(1) - u(2) + u(3) - u(4)) * sigma * [0;0;1]) + n - cross(omega,I*omega));
+    zdot = [pos_dot; alpha_dot; vel_dot; omega_dot];
 end
