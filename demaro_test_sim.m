@@ -25,8 +25,8 @@ intruder = uav(path, dist);
 
 % CONTROLLER
 
-% ctrl = lineartrial5(quad);
-ctrl = SAC(quad);
+ctrl = lineartrial5(quad);
+% ctrl = SAC(quad);
 
 % SIMULATION
 
