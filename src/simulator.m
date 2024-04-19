@@ -14,7 +14,7 @@ classdef simulator < handle
 
     properties(Access=public)
         animation_axis;
-        airspace_box_length = 5;
+        airspace_box_length = 10;
         axis_font_size = 14;
     end
 

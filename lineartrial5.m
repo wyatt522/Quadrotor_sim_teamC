@@ -13,6 +13,12 @@ classdef lineartrial5 < handle
         projdist;
         prev_ref(3,1) double;
         refvelvec;
+        ref;
+        time_step;
+        uav_vel;
+        ref_vel;
+        compVel;
+        last_e;
     end
 
 
@@ -24,8 +30,8 @@ classdef lineartrial5 < handle
             %[obj.A, obj.B] = linearize_quad(zeros(12,1), obj.u0, quadrotor);
             [obj.A, obj.B] = linearize_quad(quadrotor, [0, 0, 1]);
 
-            Q = diag([1 1 1 2.5 2.5 2.5 100 100 100 5 5 5]);
-            R = 2.5*eye(4);
+            Q = diag([5 5 5 2.5 2.5 2.5 5.0 5.0 5.0 1.5 1.5 1.5]);
+            R = eye(4);
      
             obj.K_to_capture = lqr(obj.A,obj.B,Q,R);
             Q = diag([5 5 5 2.5 2.5 2.5 7.5 7.5 7.5 10 10 10]);
@@ -38,21 +44,40 @@ classdef lineartrial5 < handle
 
             obj.uvec = [];
             obj.prev_ref = 0;
+            obj.ref_vel = zeros(3,1);
+            obj.uav_vel = zeros(3,1);
+            obj.compVel = zeros(3,1);
+
+            obj.last_e = zeros(12,1);
+            obj.time_step = 0.01;
         end
 
         function [ref_pos, ref_vel] = calc_ref(obj, z, y)
             if obj.y_prev ~= obj.y_prev_init
                 delta_y = y - obj.y_prev;
-                normalized_direction = normalize(delta_y);
+                uav_vel = delta_y / obj.time_step;
+                normalized_direction = (delta_y)/norm(delta_y);
                 dist_quad_uav = norm(z(1:3) - y(1:3));
                 ref_pos = y(1:3) + dist_quad_uav * normalized_direction;
             else
                 ref_pos = y(1:3);
             end
+            ref_pos = y(1:3);
             obj.y_prev = y;
             % obj.projdist = cat(2,obj.projdist,ref);
-            time_step = 0.1;
-            ref_vel = (y(1:3) - z(1:3))/time_step;
+            if norm(y(1:3) - z(1:3)) == 0
+                comp_vel = zeros(3,1)
+            else
+                if norm(uav_vel) == 0
+                    comp_vel = (y(1:3) - z(1:3))/norm(y(1:3) - z(1:3))
+                else
+                    comp_vel = norm(uav_vel)*((y(1:3) - z(1:3))/norm(y(1:3) - z(1:3)))
+                end
+            end
+            ref_vel = (uav_vel + comp_vel);
+            obj.compVel = cat(2,obj.compVel,comp_vel);
+            obj.uav_vel = cat(2,obj.uav_vel,uav_vel);
+            obj.ref_vel = cat(2,obj.ref_vel,ref_vel);
         end
 
         function iscaptured = find_capture(obj, z, y)
@@ -66,26 +91,31 @@ classdef lineartrial5 < handle
         function u = output(obj, ~, z, y)
             iscaptured = find_capture(obj, z, y);
             if iscaptured == false
-                disp("Chasing")
+                % disp("Chasing")
                 [ref_pos, ref_vel] = obj.calc_ref(z, y);
                 obj.zdes(1:3) = ref_pos; %ref(1:3);
                 obj.zdes(7:9) = ref_vel;
                 e = obj.zdes - z;
-                v = -obj.K_to_capture * e;
+                % edot = (e - obj.last_e) / obj.time_step;
+                % v = -obj.K_to_capture * (edot + e);
+                v = -obj.K_to_capture(:,7:9) * e(7:9);
                 u = obj.u0 - v;
             elseif iscaptured == true
-                disp("Returning")
+                % disp("Returning")
                 obj.zdes = zeros(12,1);
                 obj.zdes(3) = 3;
                 e = obj.zdes - z;
                 v = -obj.K_to_return * e;
                 u = obj.u0 - v;
             end
+            obj.last_e = e;
             obj.uvec = cat(2,obj.uvec,u);
-            obj.refvelvec = cat(2,obj.refvelvec,ref_vel);
+            % obj.refvelvec = cat(2,obj.refvelvec,ref_vel);
         end
     end
 end
+
+% function edot = fxn(A,B,e,v)
 
 % function [A, B] = linearize(q_eq, u_eq, quadrotor)
 %     syms x y z xdot ydot zdot alpha_phi alpha_theta alpha_psi omega1 omega2 omega3 u1 u2 u3 u4 ...

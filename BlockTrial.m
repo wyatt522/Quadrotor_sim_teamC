@@ -3,52 +3,53 @@ clc; clear; close all;
 m = 10; % Mass of the block [kg]
 b = 2; % Damping coefficient [Ns/m]
 % k = 4; % Spring stiffness [N/m]
-k = 5;
+k = 25;
 t0 = 0; % Simulation start time
-tf = 10; % Simulation finish time
+tf = 50; % Simulation finish time
+N = (tf-t0) * 10;
 y0 = 0; % y0 = y(t0)
 v0 = 1; % v0 = dy/dt(t0)
  % Reference (desired) input
 %% System Dynamics
 % Defining control as an anonymous function increases code modularity.
-ts = 3;
-r = 5;
-points = linspace(t0,tf,100);
-for i=1:100
-    sinWave(i) = sin(points(i));
-    cosWave(i) = cos(points(i));
-end
-rdot = @(x,t) cos(t)-x;
-phi = @(x,t) k*(rdot(x(1),t) - x(2));
+
+r = @(t) 5;
+rdot = @(t) 0;
+
+error = @(x,t) r(t) - x;
+errordot = @(x,t) rdot(t) - x;
+
+phi = @(x,t) (errordot(x(2),t)) + k*(error(x(1),t)); % ctrl input with edot
+% phi = @(x,t) k*error(x(1),t); % ctrl input without edot
 f = @(t, x, u)[x(2); u/m - b/m * x(2)];
 %% Solving for The Solution
 x0 = [y0; v0];
-t = linspace(t0, tf, 100)';
-% We can use an anonymous function to reduce the input numbers of the f
-% function by fixing u as phi(x)
+t = linspace(t0, tf, N)';
+for i=1:N
+    refVec(i) = r(t(i));
+    refDotVec(i) = rdot(t(i));
+end
 [~,x] = ode45(@(t,x)f(t,x,phi(x,t)), t, x0);
-% for i=1:100
-%     rdot_disp(i) = rdot(x(:,1));
-% end
+for i=1:N
+    eVec(i) = error(x(i,1),t(i));
+    edotVec(i) = errordot(x(i,2),t(i));
+end
 %% Display the results
-% ax = axes('NextPlot','add','TickLabelInterpreter','LaTeX','FontSize',20,...
-% 'XLim',[t(1), t(end)],...
-% 'Xgrid','on','Ygrid','on','Box','on');
-% line(t,x(:,1),'color',[0, 0.447, 0.741],'LineWidth',2,...
-% 'Parent',ax,'DisplayName','$y(t)$');
-% line(t,x(:,2),'color',[0.85, 0.325, 0.098],'LineWidth',2,...
-% 'Parent',ax,'DisplayName','$\dot{y}(t)$');
-% % line(t([1,end]),[r r],'color',[0 0 0],'LineWidth',2,...
-% % 'LineStyle','--','Parent',ax,'DisplayName','$r$');
-% % line(t,rdot_disp,'color',[0 0 0],'LineWidth',2,...
-% % 'LineStyle','--','Parent',ax,'DisplayName','$rdot$');
-% xlabel(ax,'$t$ [s]','Interpreter','LaTeX','FontSize',20);
-% legend(ax,'Interpreter','LaTeX','FontSize',20,...
-% 'Position', [0.786, 0.666, 0.098, 0.135]);
-
-% 'Ylim',[-0.1 r + 0.1]
-
+SysResp = figure;
+yyaxis left;
 plot(t,x(:,1),'b'); hold on;
-plot(t,x(:,2),'b--');
-plot(t, sinWave,'r');
-plot(t, cosWave,'r--')
+plot(t, refVec,'b--');
+ylabel('Position, x [m]');
+yyaxis right;
+plot(t,x(:,2),'r');
+plot(t, refDotVec,'r--');
+ylabel('Velocity, v [m/s]');
+legend('Block Position','Block Velocity','Reference Position','Reference Velocity');
+title('System Response'); xlabel('Time, t [s]');
+
+ErrorDyn = figure;
+plot(t, eVec,'b'); hold on;
+plot(t, edotVec,'r')
+xlabel('Time, t [s]');
+legend('Error','Change in Error');
+title("Error of System");
