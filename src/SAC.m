@@ -21,7 +21,7 @@ classdef SAC < handle
             obj.timeStep = 0.01;
             obj.maxVels = [0.15; 0.15; 1];
             position = [1,0,0];
-            Q = diag([10,10,10,1.5,1.5,1.5,5,5,5,5,5,5]);
+            Q = diag([5,5,5,3,3,3,4,4,4,1.5,1.5,1.5]);
             R = 3*eye(4);
             [A, B] = linearize_quad(quadrotor, position);
             [K,~, ~] = lqr(A,B,Q,R);
@@ -29,7 +29,7 @@ classdef SAC < handle
             obj.output_count = 0;
             obj.prev_coeffs = zeros(3, 8);
             obj.target_time = -1;
-            obj.jump_ahead_level = 3;
+            obj.jump_ahead_level = 4.0;
 
         end
 
@@ -47,7 +47,7 @@ classdef SAC < handle
                     if (self.target_time == -1)
                         % check to find target, go straight to UAV
                         self.target_time = self.jump_ahead_level;
-                        self.jump_ahead_level = self.jump_ahead_level + 0.25;
+                        self.jump_ahead_level = self.jump_ahead_level + 0.2;
                         r(1:3) = y(1:3);
                     elseif (self.target_time == 0)
                         self.hard_follow_timer = self.hard_follow_timer + 1;

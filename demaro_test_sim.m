@@ -14,7 +14,7 @@ sigma = 0.01;  % The proportionality constant relating thrust to torque [m]
 quad = quadrotor(g, l, m, diag(I), mu, sigma);
 
 % INTRUDER
-path = @(t) [1*cos(t); 1*sin(t) + 1.1*cos(t); 1.5];
+path = @(t) [4*cos(t); 3.5*sin(t); 5];
 dist = struct("r", @(t,z)0.1*[sin(t); sin(2*t); sin(4*t)],...
     "n", @(t,z) 0.1*[0.1; 0.01; 0.1]);
 
@@ -25,7 +25,7 @@ ctrl = SAC(quad);
 % SIMULATION
 
 sim = simulator(quad, ctrl, intruder);
-sim.simtime = [0 25];
+sim.simtime = [0 20];
 sim.timestep = 0.01;
 sim.epsilon = 0.1;
 
