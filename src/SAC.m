@@ -21,8 +21,10 @@ classdef SAC < handle
             obj.timeStep = 0.01;
             obj.maxVels = [0.15; 0.15; 1];
             position = [1,0,0];
-            Q = diag([4, 4,4,15, 15, 4,1.5,1.5,1.5,1.5,1.5,1.5]);
-            fast_Q = diag([10,10,10, 8,8, 4,1.5,1.5,1.5,1.5,1.5,1.5]);
+            % Q = diag([4 4 4 15 15 4 1.5 1.5 1.5 1.5 1.5 1.5]);
+            % fast_Q = diag([10 10 10 8 8 4 1.5 1.5 1.5 1.5 1.5 1.5]);
+            Q = diag([5 5 5 5 5 5 1 1 1 1 1 1]);
+            fast_Q = diag([10 10 10 1 1 1 5 5 5 1 1 1]);
             R = 3*eye(4);
             [A, B] = linearize_quad(quadrotor, position);
             [K,~, ~] = lqr(A,B,Q,R);
@@ -36,9 +38,8 @@ classdef SAC < handle
 
         end
 
-        function [u, r] = output(self, isCaptured, z, y)
+        function u = output(self, isCaptured, z, y)
             if isCaptured == false
-                % disp([target, y])
                 %find desired point
                 r = zeros(12, 1);
                 % determine trajectory of uav
@@ -49,7 +50,7 @@ classdef SAC < handle
                 error_vec = z(1:3) - y;
                 error_mag = norm(error_vec);
 
-                if (self.output_count > 100 && error_mag > 1)
+                if (self.output_count > 25 && error_mag > 1)
                     % no target time, attempt to aquire one
                     if (self.target_time == -1)
                         % check to find target, go straight to UAV
@@ -70,11 +71,12 @@ classdef SAC < handle
                     r(1:3) = y(1:3);
                 end
                 if error_mag < 1
-                    temp_k = self.fast_k;
+                    temp_k = self.fast_k; % When within 1m of UAV
                 else
                     temp_k = self.k;
                 end
                 u = repmat(self.u0, [4,1]) + temp_k*(r - z);
+                disp(error_mag);
             else
                 home = zeros(12, 1);
                 home(3) = 1;
