@@ -14,7 +14,7 @@ sigma = 0.01;  % The proportionality constant relating thrust to torque [m]
 quad = quadrotor(g, l, m, diag(I), mu, sigma);
 
 % INTRUDER
-path = @(t) [-5+t; cos(t); 5];
+path = @(t) [t-5; cos(t); 5];
 dist = struct("r", @(t,z)0.1*[sin(t); sin(2*t); sin(4*t)],...
     "n", @(t,z) 0.1*[0.1; 0.01; 0.1]);
 
@@ -25,7 +25,7 @@ intruder = uav(path, dist);
 
 % CONTROLLER
 
-ctrl = controller6(quad);
+ctrl = controller7(quad);
 % ctrl = SAC(quad);
 
 % SIMULATION
