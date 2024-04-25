@@ -14,7 +14,12 @@ sigma = 0.01;  % The proportionality constant relating thrust to torque [m]
 quad = quadrotor(g, l, m, diag(I), mu, sigma);
 
 % INTRUDER
+<<<<<<< Updated upstream
 path = @(t) [t-5; cos(t); 5];
+=======
+% path = @(t) [-5 + t; 5 - t; 5];
+path = @(t) [2*cos(t); 2*sin(t); 5];
+>>>>>>> Stashed changes
 dist = struct("r", @(t,z)0.1*[sin(t); sin(2*t); sin(4*t)],...
     "n", @(t,z) 0.1*[0.1; 0.01; 0.1]);
 
@@ -51,16 +56,15 @@ ylabel('Rotor Torques, T (Nm)')
 % figure
 % plot(ctrl.refvelvec(1,:)); hold on; plot(ctrl.refvelvec(2,:)); plot(ctrl.refvelvec(3,:));
 figure
-plot(ctrl.ref_vel(1,:),'r--'); hold on; plot(ctrl.ref_vel(2,:),'g--'); plot(ctrl.ref_vel(3,:),'b--');
+plot(ctrl.ref_vel_vec(1,:),'r--'); hold on; plot(ctrl.ref_vel_vec(2,:),'g--'); plot(ctrl.ref_vel_vec(3,:),'b--');
 plot(z(:,7),'r'); plot(z(:,8),'g'); plot(z(:,9),'b');
 legend('Ref Vel X','Ref Vel Y','Ref Vel Z','Quad Vel X','Quad Vel Y','Quad Vel Z')
 grid on
 xlim([0 500]);
 figure
-plot(ctrl.ref_vel(1,:),'r',LineWidth=2); hold on; plot(ctrl.ref_vel(2,:),'g',LineWidth=2); plot(ctrl.ref_vel(3,:),'b',LineWidth=2);
-plot(ctrl.uav_vel(1,:),'r--'); plot(ctrl.uav_vel(2,:),'g--'); plot(ctrl.uav_vel(3,:),'b--');
-plot(ctrl.compVel(1,:),'k--'); plot(ctrl.compVel(2,:),'k:'); plot(ctrl.compVel(3,:),'k-.');
-legend('Ref Vel X','Ref Vel Y','Ref Vel Z','UAV Vel X','UAV Vel Y','UAV Vel Z','Comp Vel X','Comp Vel Y','Comp Vel Z')
+plot(ctrl.ref_vel_vec(1,:),'r',LineWidth=2); hold on; plot(ctrl.ref_vel_vec(2,:),'g',LineWidth=2); plot(ctrl.ref_vel_vec(3,:),'b',LineWidth=2);
+plot(ctrl.uav_vel_vec(1,:),'r--'); plot(ctrl.uav_vel_vec(2,:),'g--'); plot(ctrl.uav_vel_vec(3,:),'b--');
+legend('Ref Vel X','Ref Vel Y','Ref Vel Z','UAV Vel X','UAV Vel Y','UAV Vel Z')
 grid on
 xlim([0 500]);
 title('Breakdown of Ref Vel')
