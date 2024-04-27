@@ -41,7 +41,7 @@ classdef controller6 < handle
             Q = diag([1.5 1.5 1.5 6 6 6 2.5 2.5 2.5 3 3 3]);
             obj.K_to_chase = lqr(obj.A,obj.B,Q,R);
 
-            Q = diag([2 2 2 4 4 4 0.5 0.5 0.5 1 1 1]);
+            Q = diag([6 6 6 4 4 4 0.5 0.5 0.5 1 1 1]);
             obj.K_to_close = lqr(obj.A,obj.B,Q,R);
 
             Q = diag([2 2 1 6 6 6 1 1 1 3 3 3]);
@@ -168,6 +168,7 @@ classdef controller6 < handle
 
         function [ref_pos, ref_vel] = calc_ref_chase(obj, z, y)
             if ~any(isnan(obj.y_prev)) % if past first time step, cast reference position and uav velocity
+                    % Cast farther into future with predictive code
                 delta_y = y - obj.y_prev;
                 ref_pos = y + delta_y;
 
@@ -180,7 +181,7 @@ classdef controller6 < handle
                 uav_vel = zeros(3,1);
                 uav_speed = 0;
             end
-            future_dist = @(opt_heading) norm( (y + delta_y) - (z(1:3) + (opt_heading*uav_speed)) );
+            future_dist = @(opt_heading) norm( (y + 3 * delta_y) - (z(1:3) + (opt_heading*uav_speed)) );
             guess = [1; 1; 1]/norm([1; 1; 1]);
             [opt_heading, ~] = fminsearch(future_dist, guess);
             if norm(opt_heading) ~= 0
@@ -188,7 +189,7 @@ classdef controller6 < handle
             else
                 opt_heading = zeros(3,1);
             end
-            ref_vel = opt_heading*uav_speed;
+            ref_vel = 0.5*opt_heading*uav_speed;
             obj.ref_vel_vec = cat(2,obj.ref_vel_vec, ref_vel);
             obj.uav_vel_vec = cat(2,obj.uav_vel_vec, uav_vel);
             obj.y_prev = y;
@@ -210,11 +211,13 @@ classdef controller6 < handle
                     obj.zdes(1:3) = ref_pos;
                     obj.zdes(7:9) = ref_vel;
                     u = obj.u0 + obj.K_to_chase * (obj.zdes - z);
+                    disp('Chase')
                 else
                     [ref_pos, ref_vel] = obj.calc_ref_chase(z, y);
                     obj.zdes(1:3) = ref_pos;
-                    obj.zdes(7:9) = ref_vel;
+                    obj.zdes(7:9) = obj.zdes(7:9);
                     u = obj.u0 + obj.K_to_close * (obj.zdes - z);
+                    disp('Close')
                 end
             else
                 if obj.returnXY == false
