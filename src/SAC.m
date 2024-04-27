@@ -36,9 +36,8 @@ classdef SAC < handle
 
         end
 
-        function [u, r] = output(self, isCaptured, z, y)
+        function u = output(self, isCaptured, z, y)
             if isCaptured == false
-                % disp([target, y])
                 %find desired point
                 r = zeros(12, 1);
                 % determine trajectory of uav
@@ -69,14 +68,15 @@ classdef SAC < handle
                     r(1:3) = y(1:3);
                 end
                 if error_mag < 1.5
-                    temp_k = self.fast_k;
+                    temp_k = self.fast_k; % When within 1.5m of UAV
                 else
                     temp_k = self.k;
                 end
                 u = repmat(self.u0, [4,1]) + temp_k*(r - z);
+                disp(error_mag);
             else
                 home = zeros(12, 1);
-                home(3) = r(3);
+                home(3) = z(3);
                 u = repmat(self.u0, [4,1]) + self.k*(home - z);
             end
         end
