@@ -31,7 +31,7 @@ classdef SAC < handle
             obj.output_count = 0;
             obj.prev_coeffs = zeros(3, 8);
             obj.target_time = -1;
-            obj.jump_ahead_level = 3.5;
+            obj.jump_ahead_level = 3;
             obj.fast_k = fast_K;
 
         end
@@ -46,13 +46,14 @@ classdef SAC < handle
                 % collect data first 15 timesteps
                 
                 error_vec = z(1:3) - y;
-                error_mag = norm(error_vec)
+                error_mag = norm(error_vec);
                 if (self.output_count > 15)
                     % no target time, attempt to aquire one
-                    if (self.target_time == -1)
+                    if ((self.target_time == -1) && (error_mag > 0.75))
                         % check to find target, go straight to UAV
                         self.target_time = self.jump_ahead_level;
-                        self.jump_ahead_level = self.jump_ahead_level + 0.1;
+                        self.jump_ahead_level = self.jump_ahead_level + 0.15;
+                        r(1:3) = solvePoly(coeffs, 0.05);
                     else
                         % update for time passing, and go to the expected
                         % location
@@ -60,8 +61,9 @@ classdef SAC < handle
                         if (self.target_time == 0)
                             self.target_time = -1;
                         end
+                        r(1:3) = solvePoly(coeffs, self.target_time);
                     end
-                    r(1:3) = solvePoly(coeffs, self.target_time)
+                    
                 else
                     % update data collection timer, go straight to UAV
                     self.output_count = self.output_count + 1;
@@ -76,7 +78,7 @@ classdef SAC < handle
                 disp(error_mag);
             else
                 home = zeros(12, 1);
-                home(3) = z(3);
+                home(3) = (3);
                 u = repmat(self.u0, [4,1]) + self.k*(home - z);
             end
         end
