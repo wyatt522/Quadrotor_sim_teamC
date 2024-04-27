@@ -76,7 +76,7 @@ classdef SAC < handle
                 u = repmat(self.u0, [4,1]) + temp_k*(r - z);
             else
                 home = zeros(12, 1);
-                home(3) = 1;
+                home(3) = r(3);
                 u = repmat(self.u0, [4,1]) + self.k*(home - z);
             end
         end
