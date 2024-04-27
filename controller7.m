@@ -38,7 +38,7 @@ classdef controller7 < handle
             R = 2*eye(4);
             obj.K_position = lqr(obj.A,obj.B,Q,R);
 
-            Q = diag([1 1 1 1 1 1 10 10 10 1 1 1]);
+            Q = diag([1 1 1 1 1 1 1 1 1 1 1 1]);
             obj.K_velocity = lqr(obj.A,obj.B,Q,R);
 
             Q = diag([5 5 5 10 10 10 2.5 2.5 2.5 7.5 7.5 7.5]);
@@ -121,9 +121,6 @@ classdef controller7 < handle
                 else
                     uav_heading = (delta_y)/norm(delta_y); % heading of UAV
                 end
-            %     dist_quad_uav = norm(z(1:3) - y(1:3)); % scalar distance between Quad and UAV
-            %     ref_pos = y(1:3) + dist_quad_uav * normalized_direction; % cast a reference position 
-            %         % by projecting UAV heading by the scalar distance between Q & U
             else % if no history available, cast reference position as current UAV position
                 delta_y = 0;
                 ref_pos = y(1:3) + delta_y;
@@ -137,18 +134,15 @@ classdef controller7 < handle
             if norm(y(1:3) - z(1:3)) == 0
                 comp_heading = zeros(3,1);
             else
-                comp_heading = (y(1:3) - z(1:3))/norm(y(1:3) - z(1:3));
-                % if norm(uav_vel) == 0
-                %     comp_heading = (y(1:3) - z(1:3))/norm(y(1:3) - z(1:3))
-                % else
-                %     comp_vel = norm(uav_vel)*((y(1:3) - z(1:3))/norm(y(1:3) - z(1:3)))
-                % end
+                % comp_heading = (y(1:3) - z(1:3))/norm(y(1:3) - z(1:3));
+                comp_heading = y(1:3) - z(1:3);
             end
             % ref_heading = (uav_heading + comp_heading)/norm(uav_heading + comp_heading);
             ref_heading = (delta_y + (y - z(1:3))) / norm(delta_y + (y - z(1:3)));
             vel_Mag = uav_speed;
             % ref_vel = vel_Mag * ref_heading;
             ref_vel = (uav_vel + (ref_pos-z(1:3))) * 0.1;
+            % ref_vel = comp_heading
             obj.compVel = cat(2,obj.compVel,comp_heading/norm(uav_heading + comp_heading)*vel_Mag);
             obj.uav_vel = cat(2,obj.uav_vel,uav_heading/norm(uav_heading + comp_heading)*vel_Mag);
             obj.ref_vel = cat(2,obj.ref_vel,ref_vel);

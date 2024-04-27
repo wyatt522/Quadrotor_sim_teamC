@@ -14,8 +14,8 @@ sigma = 0.01;  % The proportionality constant relating thrust to torque [m]
 quad = quadrotor(g, l, m, diag(I), mu, sigma);
 
 % INTRUDER
-% path = @(t) [-5 + t; 5 - t; 5];
-path = @(t) [3*cos(t); 3*sin(t); 5];
+path = @(t) [-5 + t; 5 - t; 5];
+% path = @(t) [2*cos(t); 2*sin(t); 5];
 dist = struct("r", @(t,z)0.1*[sin(t); sin(2*t); sin(4*t)],...
     "n", @(t,z) 0.1*[0.1; 0.01; 0.1]);
 
