@@ -22,7 +22,7 @@ classdef SAC < handle
             obj.maxVels = [0.15; 0.15; 1];
             position = [1,0,0];
             Q = diag([4, 4,4,15, 15, 4,1.5,1.5,1.5,1.5,1.5,1.5]);
-            fast_Q = diag([10,10,10, 8,8, 4,1.5,1.5,1.5,1.5,1.5,1.5]);
+            fast_Q = diag([14,14,11, 8,8, 4,1.0,1.0,1.0,1.5,1.5,1.5]);
             R = 3*eye(4);
             [A, B] = linearize_quad(quadrotor, position);
             [K,~, ~] = lqr(A,B,Q,R);
@@ -31,7 +31,7 @@ classdef SAC < handle
             obj.output_count = 0;
             obj.prev_coeffs = zeros(3, 8);
             obj.target_time = -1;
-            obj.jump_ahead_level = 4.0;
+            obj.jump_ahead_level = 3.5;
             obj.fast_k = fast_K;
 
         end
@@ -44,12 +44,11 @@ classdef SAC < handle
                 % determine trajectory of uav
                 [~, coeff_size] = size(self.prev_coeffs);
                 coeffs = self.solveCoeffs(y, coeff_size - 1);
-                % collect data first 100 timesteps
+                % collect data first 15 timesteps
                 
                 error_vec = z(1:3) - y;
-                error_mag = norm(error_vec);
-
-                if (self.output_count > 100 && error_mag > 1)
+                error_mag = norm(error_vec)
+                if (self.output_count > 15)
                     % no target time, attempt to aquire one
                     if (self.target_time == -1)
                         % check to find target, go straight to UAV
@@ -63,13 +62,13 @@ classdef SAC < handle
                             self.target_time = -1;
                         end
                     end
-                    r(1:3) = solvePoly(coeffs, self.target_time);
+                    r(1:3) = solvePoly(coeffs, self.target_time)
                 else
                     % update data collection timer, go straight to UAV
                     self.output_count = self.output_count + 1;
                     r(1:3) = y(1:3);
                 end
-                if error_mag < 1
+                if error_mag < 1.5
                     temp_k = self.fast_k;
                 else
                     temp_k = self.k;
