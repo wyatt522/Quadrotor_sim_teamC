@@ -19,9 +19,9 @@ classdef SAC < handle
             obj.u0 = quadrotor.m*quadrotor.g/4;
             obj.timeStep = 0.01;
             position = [0,0,1];
-            Q = diag([4, 4,5,15, 15, 4,1.5,1.5,1.5,3,3,1.5]);
-            fast_Q = diag([12, 12, 12, 12, 12, 4,1.0,1.0,1.0,1.5,1.5,1.5]);
-            fast_R = 0.5*eye(4);
+            Q = diag([4, 4,6,15, 15, 4,1.5,1.5,1.5,3,3,1.5]);
+            fast_Q = diag([14, 14, 18, 12, 12, 4,1.0,1.0,1.0,1.5,1.5,1.5]);
+            fast_R = 0.3*eye(4);
             R = 2*eye(4);
             [A, B] = linearize_quad(quadrotor, position);
             [K,~, ~] = lqr(A,B,Q,R);
@@ -86,7 +86,11 @@ classdef SAC < handle
                 u = repmat(self.u0, [4,1]) + temp_k*(r - z);
             else
                 home = zeros(12, 1);
-                home(3) = (3);
+                if not((abs(z(1)) < 0.5) && (abs(z(2)) < 0.5))
+                    home(3) = z(3);
+                else
+                    home(3) = 0.2;
+                end
                 u = repmat(self.u0, [4,1]) + self.k*(home - z);
             end
         end
