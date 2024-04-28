@@ -11,6 +11,7 @@ classdef SAC < handle
         target_time(1,1) double;
         jump_ahead_level(1,1) double;
         fast_k(4, 12) double;
+        home_k(4, 12) double;
 
     end
 
@@ -20,14 +21,22 @@ classdef SAC < handle
             obj.timeStep = 0.01;
             position = [0,0,1];
             Q = diag([4, 4,6,15, 15, 4,1.5,1.5,1.5,3,3,1.5]);
-            fast_Q = diag([14, 14, 18, 12, 12, 4,1.0,1.0,1.0,1.5,1.5,1.5]);
-            fast_R = 0.3*eye(4);
             R = 2*eye(4);
+
+            fast_Q = diag([14, 14, 16, 12, 12, 4,1.0,1.0,1.0,1.5,1.5,1.5]);
+            fast_R = 0.3*eye(4);
+
+            home_Q = diag([4, 4, 6, 18, 18, 10,8.0,8.0,8.0,4.5,4.5,4.5]);
+            home_R = 3*eye(4);
+
             [A, B] = linearize_quad(quadrotor, position);
             [K,~, ~] = lqr(A,B,Q,R);
             [fast_K,~, ~] = lqr(A,B,fast_Q,fast_R);
+            [home_K,~, ~] = lqr(A,B,home_Q,home_R);
+
             obj.k = K;
             obj.fast_k = fast_K;
+            obj.home_k = home_K;
             obj.output_count = 0;
             obj.prev_coeffs = zeros(3, 8);
             obj.target_time = -1;
@@ -56,12 +65,13 @@ classdef SAC < handle
                         else
                             self.target_time = self.jump_ahead_level;
                             self.jump_ahead_level = self.jump_ahead_level + 0.1;
+                            r(1:3) = solvePoly(coeffs, self.target_time);
                         end
                     else
                         % update for time passing, and go to the expected
                         % location
                         self.target_time = max(self.target_time - self.timeStep, 0);
-                        if ((self.target_time <= 0) || (error_mag < 1))
+                        if ((self.target_time == 0) || (error_mag < 1))
                             self.target_time = -1;
                         end
                         r(1:3) = solvePoly(coeffs, self.target_time);
@@ -91,7 +101,7 @@ classdef SAC < handle
                 else
                     home(3) = 0.2;
                 end
-                u = repmat(self.u0, [4,1]) + self.k*(home - z);
+                u = repmat(self.u0, [4,1]) + self.home_k*(home - z);
             end
         end
 
