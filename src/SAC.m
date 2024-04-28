@@ -20,14 +20,25 @@ classdef SAC < handle
             obj.u0 = quadrotor.m*quadrotor.g/4;
             obj.timeStep = 0.01;
             position = [0,0,1];
-            Q = diag([4, 4,6,15, 15, 4,1.5,1.5,1.5,3,3,1.5]);
-            R = 2*eye(4);
+            Q = diag([5, 5,8,15, 15, 8,1.25,1.25,1.0,3,3,1.5]);
+            R = 1.55*eye(4);
 
-            fast_Q = diag([14, 14, 16, 12, 12, 4,1.0,1.0,1.0,1.5,1.5,1.5]);
-            fast_R = 0.3*eye(4);
+            fast_Q = diag([14, 14, 20, 12, 12, 4,1.0,1.0,1.0,1.5,1.5,1.5]);
+            fast_R = 0.2*eye(4);
 
-            home_Q = diag([4, 4, 6, 18, 18, 10,8.0,8.0,8.0,4.5,4.5,4.5]);
+            %home_Q = diag([4, 4, 6, 18, 18, 10,8.0,8.0,8.0,4.5,4.5,4.5]);
+            home_Q = eye(12);
             home_R = 3*eye(4);
+            
+            % ULTRA FAST LINE FOLLOWER
+%             Q = diag([10, 10, 20, 15, 15, 4, 0.5, 0.5, 0.5, 3,3,1.5]);
+%             R = 2.25*eye(4);
+% 
+%             fast_Q = diag([14, 14, 16, 12, 12, 4, 0.1, 0.1, 0.5, 1.5,1.5,1.5]);
+%             fast_R = 0.2eye(4);
+% 
+%             home_Q = eye(12);
+%             home_R = 6*eye(4);
 
             [A, B] = linearize_quad(quadrotor, position);
             [K,~, ~] = lqr(A,B,Q,R);
@@ -45,6 +56,7 @@ classdef SAC < handle
         end
 
         function u = output(self, isCaptured, z, y)
+            kill_dist = 0.5;
             if isCaptured == false
                 %find desired point
                 r = zeros(12, 1);
@@ -58,7 +70,7 @@ classdef SAC < handle
                 if (self.output_count > 10)
                     % no target time, attempt to aquire one
                     if (self.target_time == -1)
-                        if (error_mag < 1)
+                        if (error_mag < kill_dist)
                             r(1:3) = solvePoly(coeffs, 0.03);
                             disp("in kill mode");
                             disp(error_mag);
@@ -71,7 +83,7 @@ classdef SAC < handle
                         % update for time passing, and go to the expected
                         % location
                         self.target_time = max(self.target_time - self.timeStep, 0);
-                        if ((self.target_time == 0) || (error_mag < 1))
+                        if ((self.target_time == 0) || (error_mag < kill_dist))
                             self.target_time = -1;
                         end
                         r(1:3) = solvePoly(coeffs, self.target_time);
@@ -83,7 +95,7 @@ classdef SAC < handle
                     self.output_count = self.output_count + 1;
                     r(1:3) = y(1:3);
                 end
-                if error_mag < 1
+                if error_mag < kill_dist
                     temp_k = self.fast_k; % When within range of UAV
                 else
                     temp_k = self.k;
