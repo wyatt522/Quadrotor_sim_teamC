@@ -5,9 +5,8 @@ classdef SAC < handle
         u0(1,1) double;
         A(12,12) double;
         B(12,4) double;
-        prev_coeffs(3, 8) double;
+        prev_coeffs; 
         timeStep(1,1) double;
-        maxVels(3,1) double;
         output_count(1,1) double;
         target_time(1,1) double;
         jump_ahead_level(1,1) double;
@@ -19,20 +18,20 @@ classdef SAC < handle
         function obj = SAC(quadrotor)
             obj.u0 = quadrotor.m*quadrotor.g/4;
             obj.timeStep = 0.01;
-            obj.maxVels = [0.15; 0.15; 1];
-            position = [1,0,0];
-            Q = diag([4, 4,4,15, 15, 4,1.5,1.5,1.5,1.5,1.5,1.5]);
-            fast_Q = diag([14,14,11, 8,8, 4,1.0,1.0,1.0,1.5,1.5,1.5]);
-            R = 3*eye(4);
+            position = [0,0,1];
+            Q = diag([4, 4,5,15, 15, 4,1.5,1.5,1.5,3,3,1.5]);
+            fast_Q = diag([12, 12, 12, 12, 12, 4,1.0,1.0,1.0,1.5,1.5,1.5]);
+            fast_R = 0.5*eye(4);
+            R = 2*eye(4);
             [A, B] = linearize_quad(quadrotor, position);
             [K,~, ~] = lqr(A,B,Q,R);
-            [fast_K,~, ~] = lqr(A,B,fast_Q,R);
+            [fast_K,~, ~] = lqr(A,B,fast_Q,fast_R);
             obj.k = K;
+            obj.fast_k = fast_K;
             obj.output_count = 0;
             obj.prev_coeffs = zeros(3, 8);
             obj.target_time = -1;
-            obj.jump_ahead_level = 3;
-            obj.fast_k = fast_K;
+            obj.jump_ahead_level = 3.6;
 
         end
 
@@ -47,21 +46,26 @@ classdef SAC < handle
                 
                 error_vec = z(1:3) - y;
                 error_mag = norm(error_vec);
-                if (self.output_count > 15)
+                if (self.output_count > 10)
                     % no target time, attempt to aquire one
-                    if ((self.target_time == -1) && (error_mag > 0.75))
-                        % check to find target, go straight to UAV
-                        self.target_time = self.jump_ahead_level;
-                        self.jump_ahead_level = self.jump_ahead_level + 0.15;
-                        r(1:3) = solvePoly(coeffs, 0.05);
+                    if (self.target_time == -1)
+                        if (error_mag < 1)
+                            r(1:3) = solvePoly(coeffs, 0.03);
+                            disp("in kill mode");
+                            disp(error_mag);
+                        else
+                            self.target_time = self.jump_ahead_level;
+                            self.jump_ahead_level = self.jump_ahead_level + 0.1;
+                        end
                     else
                         % update for time passing, and go to the expected
                         % location
                         self.target_time = max(self.target_time - self.timeStep, 0);
-                        if (self.target_time == 0)
+                        if ((self.target_time <= 0) || (error_mag < 1))
                             self.target_time = -1;
                         end
                         r(1:3) = solvePoly(coeffs, self.target_time);
+
                     end
                     
                 else
@@ -69,13 +73,17 @@ classdef SAC < handle
                     self.output_count = self.output_count + 1;
                     r(1:3) = y(1:3);
                 end
-                if error_mag < 1.5
-                    temp_k = self.fast_k; % When within 1.5m of UAV
+                if error_mag < 1
+                    temp_k = self.fast_k; % When within range of UAV
                 else
                     temp_k = self.k;
                 end
+
+                %bound target location
+                r(1:2) = min(5, max(-5, r(1:2)));
+                r(3) = min(10, max(0, r(3)));
+
                 u = repmat(self.u0, [4,1]) + temp_k*(r - z);
-                disp(error_mag);
             else
                 home = zeros(12, 1);
                 home(3) = (3);
@@ -84,10 +92,16 @@ classdef SAC < handle
         end
 
         function coeffs = solveCoeffs(self, y, degree)
+            threshold = 1e-11; % threshold for rounding errors
             yder = zeros(3, degree + 1);
             yder(:, 1) = y;
             for i = 2:degree + 1
                 yder(:, i) = (yder(:, i - 1) - factorial(i - 2)*self.prev_coeffs(:, (degree + 3 - i))) / self.timeStep;
+                for j = 1:3
+                    if (abs(yder(j, i)) < threshold)
+                        yder(j, i) = 0;
+                    end
+                end
             end
             coeffs = zeros(3, degree + 1);
             for i = 1:degree + 1
