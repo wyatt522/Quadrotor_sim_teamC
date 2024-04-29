@@ -12,7 +12,7 @@ classdef SAC < handle
         jump_ahead_level(1,1) double;
         fast_k(4, 12) double;
         home_k(4, 12) double;
-
+        uvec;
     end
 
     methods(Access = public)
@@ -56,7 +56,7 @@ classdef SAC < handle
         end
 
         function u = output(self, isCaptured, z, y)
-            kill_dist = 0.5;
+            kill_dist = 0;
             if isCaptured == false
                 %find desired point
                 r = zeros(12, 1);
@@ -116,6 +116,7 @@ classdef SAC < handle
                 end
                 u = repmat(self.u0, [4,1]) + self.home_k*(home - z);
             end
+            self.uvec = cat(2,self.uvec,u);
         end
 
         function coeffs = solveCoeffs(self, y, degree)
