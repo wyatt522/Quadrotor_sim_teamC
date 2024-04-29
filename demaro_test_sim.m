@@ -15,9 +15,10 @@ quad = quadrotor(g, l, m, diag(I), mu, sigma);
 
 % INTRUDER
 %path = @(t) [(-5 + t); (5 - t); 5];
-% path = @(t) [-1; -3+t; t];
-path = @(t) [2*cos(t); 2*sin(t); 0.5*t + 0 + 0*sin(t)];
+% path = @(t) [-5 + 0.2*t; -5 + 1.5*t; 10 - 1.5*t];
+path = @(t) [4*cos(t); 4*sin(t); 0*t + 8 + 0*sin(t)];
 %path = @(t) [-5+t; cos(t); 5];
+%path = @(t) [2; 2; 6];
 dist = struct("r", @(t,z)0.1*[sin(t); sin(2*t); sin(4*t)],...
     "n", @(t,z) 0.1*[0.1; 0.01; 0.1]);
 

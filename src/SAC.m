@@ -75,9 +75,15 @@ classdef SAC < handle
                             disp("in kill mode");
                             disp(error_mag);
                         else
-                            self.target_time = self.jump_ahead_level;
-                            self.jump_ahead_level = self.jump_ahead_level + 0.1;
-                            r(1:3) = solvePoly(coeffs, self.target_time);
+                            if ((abs(z(4)) + abs(z(5)) + abs(z(6))) > 0.1)
+                                disp("recovering")
+                                disp(z)
+                                r(1:3) = z(1:3);
+                            else
+                                self.target_time = self.jump_ahead_level;
+                                self.jump_ahead_level = self.jump_ahead_level + 0.1;
+                                r(1:3) = solvePoly(coeffs, self.target_time);
+                            end
                         end
                     else
                         % update for time passing, and go to the expected
@@ -105,7 +111,13 @@ classdef SAC < handle
                 r(1:2) = min(5, max(-5, r(1:2)));
                 r(3) = min(10, max(0, r(3)));
 
-                u = repmat(self.u0, [4,1]) + temp_k*(r - z);
+                if ((abs(z(4)) + abs(z(5)) + abs(z(6))) > 0.6)
+                    gravity_comp = 0.5*repmat(self.u0, [4,1]);
+                else
+                    gravity_comp = repmat(self.u0, [4,1]);
+                end
+
+                u = gravity_comp + temp_k*(r - z);
             else
                 home = zeros(12, 1);
                 if not((abs(z(1)) < 0.5) && (abs(z(2)) < 0.5))
@@ -113,6 +125,8 @@ classdef SAC < handle
                 else
                     home(3) = 0.2;
                 end
+                
+
                 u = repmat(self.u0, [4,1]) + self.home_k*(home - z);
             end
         end
