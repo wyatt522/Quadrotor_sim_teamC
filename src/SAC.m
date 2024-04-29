@@ -67,11 +67,11 @@ classdef SAC < handle
                 
                 error_vec = z(1:3) - y;
                 error_mag = norm(error_vec);
-                if (self.output_count > 10)
+                if (self.output_count > 200)
                     % no target time, attempt to aquire one
                     if (self.target_time == -1)
                         if (error_mag < kill_dist)
-                            r(1:3) = solvePoly(coeffs, 0.03);
+                            r(1:3) = solvePoly(coeffs, 0.08);
                             disp("in kill mode");
                             disp(error_mag);
                         else
@@ -83,7 +83,7 @@ classdef SAC < handle
                         % update for time passing, and go to the expected
                         % location
                         self.target_time = max(self.target_time - self.timeStep, 0);
-                        if ((self.target_time == 0) || (error_mag < kill_dist))
+                        if ((self.target_time == 0) || (error_mag < (kill_dist*0.1)))
                             self.target_time = -1;
                         end
                         r(1:3) = solvePoly(coeffs, self.target_time);
@@ -93,7 +93,8 @@ classdef SAC < handle
                 else
                     % update data collection timer, go straight to UAV
                     self.output_count = self.output_count + 1;
-                    r(1:3) = y(1:3);
+                    r(1:2) = [0;0];
+                    r(3) = y(3);
                 end
                 if error_mag < kill_dist
                     temp_k = self.fast_k; % When within range of UAV
