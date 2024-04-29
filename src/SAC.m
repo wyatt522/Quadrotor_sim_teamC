@@ -90,6 +90,12 @@ classdef SAC < handle
 
                     end
                     
+                elseif (self.output_count > 10)
+                    % update data collection timer, go straight to UAV
+                    self.output_count = self.output_count + 1;
+                    r(1:2) = [0;0];
+                    pos = solvePoly(coeffs, (self.jump_ahead_level + (2 - (self.output_count/100))));
+                    r(3) = pos(3);
                 else
                     % update data collection timer, go straight to UAV
                     self.output_count = self.output_count + 1;
