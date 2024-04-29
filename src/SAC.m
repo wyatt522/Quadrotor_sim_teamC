@@ -107,14 +107,15 @@ classdef SAC < handle
                     temp_k = self.k;
                 end
 
-                %bound target location
-                r(1:2) = min(5, max(-5, r(1:2)));
-                r(3) = min(10, max(0, r(3)));
+               
 
                 if ((abs(z(4)) + abs(z(5)) + abs(z(6))) > 0.6)
                     gravity_comp = 0.5*repmat(self.u0, [4,1]);
                 else
                     gravity_comp = repmat(self.u0, [4,1]);
+                     %bound target location
+                    r(1:2) = min(5, max(-5, r(1:2)));
+                    r(3) = min(10, max(0, r(3)));
                 end
 
                 u = gravity_comp + temp_k*(r - z);
